@@ -19,9 +19,8 @@ def connect():
 def deleteMatches():
     """Remove all the match records from the database."""
     (DB, c) = connect()
-    c.execute("truncate matches")
-    c.execute("update win_num set wins = 0")
-    c.execute("update match_num set matches = 0")
+    c.execute("TRUNCATE matches")
+    c.execute("UPDATE players SET wins = 0, matches = 0")
     DB.commit()
     DB.close
 
@@ -29,10 +28,8 @@ def deleteMatches():
 def deletePlayers():
     """Remove all the player records from the database."""
     DB, c = connect()
-    c.execute("truncate win_num ")
-    c.execute("truncate match_num")
-    c.execute("truncate players cascade")
-    c.execute("truncate matches")
+    c.execute("TRUNCATE players CASCADE")
+    c.execute("TRUNCATE matches")
     DB.commit()
     DB.close()
 
@@ -40,7 +37,7 @@ def deletePlayers():
 def countPlayers():
     """Returns the number of players currently registered."""
     DB, c = connect()
-    c.execute("select count(player_id) from players")
+    c.execute("SELECT COUNT(player_id) FROM players")
     num = c.fetchone()[0]
     DB.close()
     return num
@@ -56,11 +53,8 @@ def registerPlayer(name):
       name: the player's full name (need not be unique).
     """
     DB, c = connect()
-    c.execute("insert into players (player_name) values (%s) ", (name,))
-    c.execute("select player_id from players order by player_id desc")
-    id_val = c.fetchone()
-    c.execute("insert into match_num values (%s,0)", (id_val,))
-    c.execute("insert into win_num values (%s,0)", (id_val,))
+    c.execute("INSERT INTO players (player_name, wins, matches)"
+              "VALUES (%s,0,0) ", (name,))
     DB.commit()
     DB.close()
 
@@ -79,7 +73,7 @@ def playerStandings():
         matches: the number of matches the player has played
     """
     DB, c = connect()
-    c.execute("select * from playersstanding")
+    c.execute("SELECT * FROM playersstanding")
     rows = c.fetchall()
     DB.close()
     return rows
@@ -93,11 +87,11 @@ def reportMatch(winner, loser):
       loser:  the id number of the player who lost
     """
     DB, c = connect()
-    c.execute(" insert into matches(winner, loser) values (%s,%s)",
+    c.execute(" INSERT INTO matches(winner, loser) VALUES (%s,%s)",
               (winner, loser))
-    c.execute(" update match_num set matches = matches+1 where player_id = %s"
+    c.execute(" UPDATE players SET matches = matches+1 WHERE player_id = %s"
               "or player_id = %s", (winner, loser))
-    c.execute(" update win_num set wins = wins+1 where player_id = %s",
+    c.execute(" UPDATE players SET wins = wins+1 WHERE player_id = %s",
               (winner,))
     DB.commit()
     DB.close()
@@ -118,10 +112,15 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    standings = playerStandings()
-    pairings = []
-    for l in range(0, len(standings), 2):
-        pairings.append((standings[l][0], standings[l][1], standings[l+1][0],
-                         standings[l+1][1]))
+    num = countPlayers()
+    if num % 2 == 0:
+        standings = playerStandings()
+        pairings = []
+        for l in range(0, len(standings), 2):
+            pairings.append((standings[l][0], standings[l][1],
+                             standings[l+1][0], standings[l+1][1]))
 
-    return pairings
+        return pairings
+    else:
+        raise ValueError(
+            " Number of players should be even for swiss Pairing to work")

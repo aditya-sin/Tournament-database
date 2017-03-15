@@ -10,31 +10,24 @@ DROP DATABASE IF EXISTS tournament;
 CREATE DATABASE tournament;
 \c tournament
 
---players table - has player id and name
-create table players(
-player_id serial primary key,
-player_name text
-);
--- match_num table - matches stores number of matches played by player 
-create table match_num(
-player_id serial references players,
-matches integer
-);
--- win_num table - matches stores number of matches won by player 
-create table win_num(
-player_id serial references players,
-wins integer
-);
--- macthes table stores id of winner and loser of that match
-create table matches(
-match_id serial primary key,
-winner integer references players (player_id),
-loser integer references players (player_id)
+--players table - has player id, name number of matches played
+-- and number of wins
+CREATE TABLE players(
+player_id SERIAL PRIMARY KEY,
+player_name TEXT,
+matches INTEGER,
+wins INTEGER
 );
 
-create view playersstanding as select players.player_id, 
-	players.player_name, win_num.wins,
-	match_num.matches from players, win_num, match_num 
-	where players.player_id = match_num.player_id and 
-	players.player_id = win_num.player_id 
-	order by win_num.wins desc
+-- macthes table stores id of winner and loser of that match
+CREATE TABLE matches(
+match_id SERIAL PRIMARY KEY,
+winner INTEGER REFERENCES players (player_id) ON DELETE CASCADE,
+loser INTEGER REFERENCES players (player_id) ON DELETE CASCADE 
+CHECK (loser != winner)
+);
+
+CREATE VIEW playersstanding AS 
+SELECT player_id, player_name, wins, matches
+FROM players
+ORDER BY wins DESC;
