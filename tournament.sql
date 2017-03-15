@@ -6,10 +6,9 @@
 -- You can write comments in this file by starting them with two dashes, like
 -- these lines here.
 
-drop table if exists matches cascade;
-drop table if exists match_num cascade;
-drop table if exists win_num cascade;
-drop table if exists players cascade;
+DROP DATABASE IF EXISTS tournament;
+CREATE DATABASE tournament;
+\c tournament
 
 --players table - has player id and name
 create table players(
@@ -32,3 +31,10 @@ match_id serial primary key,
 winner integer references players (player_id),
 loser integer references players (player_id)
 );
+
+create view playersstanding as select players.player_id, 
+	players.player_name, win_num.wins,
+	match_num.matches from players, win_num, match_num 
+	where players.player_id = match_num.player_id and 
+	players.player_id = win_num.player_id 
+	order by win_num.wins desc
