@@ -20,7 +20,6 @@ def deleteMatches():
     """Remove all the match records from the database."""
     (DB, c) = connect()
     c.execute("TRUNCATE matches")
-    c.execute("UPDATE players SET wins = 0, matches = 0")
     DB.commit()
     DB.close
 
@@ -29,7 +28,6 @@ def deletePlayers():
     """Remove all the player records from the database."""
     DB, c = connect()
     c.execute("TRUNCATE players CASCADE")
-    c.execute("TRUNCATE matches")
     DB.commit()
     DB.close()
 
@@ -53,8 +51,8 @@ def registerPlayer(name):
       name: the player's full name (need not be unique).
     """
     DB, c = connect()
-    c.execute("INSERT INTO players (player_name, wins, matches)"
-              "VALUES (%s,0,0) ", (name,))
+    c.execute("INSERT INTO players (player_name)"
+              "VALUES (%s) ", (name,))
     DB.commit()
     DB.close()
 
@@ -73,7 +71,7 @@ def playerStandings():
         matches: the number of matches the player has played
     """
     DB, c = connect()
-    c.execute("SELECT * FROM playersstanding")
+    c.execute("SELECT * FROM playersstandings")
     rows = c.fetchall()
     DB.close()
     return rows
@@ -89,10 +87,6 @@ def reportMatch(winner, loser):
     DB, c = connect()
     c.execute(" INSERT INTO matches(winner, loser) VALUES (%s,%s)",
               (winner, loser))
-    c.execute(" UPDATE players SET matches = matches+1 WHERE player_id = %s"
-              "or player_id = %s", (winner, loser))
-    c.execute(" UPDATE players SET wins = wins+1 WHERE player_id = %s",
-              (winner,))
     DB.commit()
     DB.close()
 
